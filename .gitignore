@@ -25,3 +25,6 @@ dist-ssr
 
 node_modules
 .env
+
+# Environment variables
+backend/config/config.env
