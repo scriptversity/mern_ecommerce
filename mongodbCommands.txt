@@ -1,0 +1,2 @@
+ db.getCollectionInfos() --> returns all the collections in the database
+ db.products.find() --> returns all the documents in the collection
