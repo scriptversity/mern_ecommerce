@@ -139,6 +139,73 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   sendToken(user, 200, res);
 });
 
+// // Get currently logged in user details => /api/v1/users/me
+// exports.getUserProfile = catchAsyncErrors(async (req, res, next) => {
+//   const user = await User.findById(req.user.id);
+
+//   res.status(200).json({
+//     success: true,
+//     user,
+//   });
+// });
+
+// Get currently logged in user details => /api/v1/users/me
+exports.getUserProfile = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select('-password -resetPasswordToken -resetPasswordExpire');
+
+  if (!user) {
+    return next(new ErrorHandler('User not found', 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// Update / Change password => /api/v1/users/password/update
+exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select('+password');
+
+  const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
+
+  if (!isPasswordMatched) {
+    return next(new ErrorHandler('Old password is incorrect', 400));
+  }
+
+  // if (req.body.newPassword !== req.body.confirmPassword) {
+  //   return next(new ErrorHandler('Password does not match', 400));
+  // }
+
+  // user.password = req.body.newPassword;
+  user.password = req.body.password;
+  await user.save();
+
+  sendToken(user, 200, res);
+});
+
+// Update user profile => /api/v1/users/me/update
+exports.updateUserProfile = catchAsyncErrors(async (req, res, next) => {
+  const newUserData = {
+    name: req.body.name,
+    email: req.body.email,
+  };
+
+  // Update avatar
+  // It will be implemented later
+
+  const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
+  });
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
 // Logout user => /api/v1/users/logout
 exports.logoutUser = catchAsyncErrors(async (req, res, next) => {
   res.cookie('token', null, {
@@ -153,3 +220,199 @@ exports.logoutUser = catchAsyncErrors(async (req, res, next) => {
     message: 'Logged out',
   });
 });
+
+// Admin routes
+
+// Get all users => /api/v1/users/admin/users
+exports.getAllUsers = catchAsyncErrors(async (req, res, next) => {
+  const users = await User.find();
+
+  // // If we want to show only active users && if we are applying soft delete
+  // const users = await User.find({ deleted: { $ne: true } });
+
+  res.status(200).json({
+    success: true,
+    users,
+  });
+});
+
+// // Get all users => /api/v1/users/admin
+// exports.getAllUsers = catchAsyncErrors(async (req, res, next) => {
+//   const pageSize = Number(req.query.pageSize) || 10;
+//   const page = Number(req.query.page) || 1;
+
+//   const query = {};
+//   const users = await User.find(query)
+//     .select('-password -resetPasswordToken -resetPasswordExpire')
+//     .skip(pageSize * (page - 1))
+//     .limit(pageSize);
+
+//   const totalUsers = await User.countDocuments(query);
+
+//   res.status(200).json({
+//     success: true,
+//     users,
+//     page,
+//     pages: Math.ceil(totalUsers / pageSize),
+//   });
+// });
+
+// // Get user details => /api/v1/users/admin/user/:id
+// exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
+//   const user = await User.findById(req.params.id);
+
+//   if (!user) {
+//     return next(new ErrorHandler(`User not found with id: ${req.params.id}`, 404));
+//   }
+
+//   res.status(200).json({
+//     success: true,
+//     user,
+//   });
+// });
+
+// Get user details => /api/v1/users/admin/user/:id
+exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
+  const { id } = req.params;
+
+  // // Validate the user ID. To use this, you need to import mongoose
+  // if (!mongoose.Types.ObjectId.isValid(id)) {
+  //   return next(new ErrorHandler(`Invalid user ID: ${id}`, 400));
+  // }
+
+  // Log the user ID being queried
+  console.log(`Fetching details for user ID: ${id}`);
+
+  const user = await User.findById(id).select('-password -resetPasswordToken -resetPasswordExpire');
+
+  if (!user) {
+    return next(new ErrorHandler(`User not found with id: ${id}`, 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// Update user profile => /api/v1/users/admin/user/:id
+exports.updateUser = catchAsyncErrors(async (req, res, next) => {
+  const newUserData = {
+    name: req.body.name,
+    email: req.body.email,
+    role: req.body.role,
+  };
+
+  const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
+  });
+
+  if (!user) {
+    return next(new ErrorHandler(`User not found with id: ${req.params.id}`, 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+
+// // const cloudinary = require('cloudinary').v2;
+
+// // // Configure Cloudinary
+// // cloudinary.config({
+// //   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+// //   api_key: process.env.CLOUDINARY_API_KEY,
+// //   api_secret: process.env.CLOUDINARY_API_SECRET,
+// // });
+
+// // Delete user => /api/v1/users/admin/user/:id
+// exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
+//   const user = await User.findById(req.params.id);
+
+//   if (!user) {
+//     return next(new ErrorHandler(`User not found with id: ${req.params.id}`, 404));
+//   }
+  
+//   // // Remove avatar from Cloudinary
+//   // const avatarId = user.avatar.public_id;
+//   // if (avatarId) {
+//   //   await cloudinary.uploader.destroy(avatarId);
+//   // }
+
+//   // Delete user from database
+//   await User.findByIdAndDelete(req.params.id);
+
+//   res.status(200).json({
+//     success: true,
+//     message: 'User deleted successfully',
+//   });
+// });
+
+// const cloudinary = require('cloudinary').v2;
+
+// // Configure Cloudinary
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_API_SECRET,
+// });
+
+// Delete user => /api/v1/users/admin/user/:id
+exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new ErrorHandler(`User not found with id: ${req.params.id}`, 404));
+  }
+
+  // Remove avatar from Cloudinary
+  // const avatarId = user.avatar.public_id;
+  // if (avatarId) {
+  //   await cloudinary.uploader.destroy(avatarId);
+  // }
+
+  // Delete user from database
+  await user.remove();
+
+  res.status(200).json({
+    success: true,
+    message: 'User deleted successfully',
+  });
+});
+
+
+// //  Delete user => /api/v1/users/admin/user/:id
+// exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
+//   const user = await User.findByIdAndDelete(req.params.id);
+
+//   if (!user) {
+//     return next(new ErrorHandler(`User not found with id: ${req.params.id}`, 404));
+//   }
+  
+//   res.status(200).json({
+//     success: true,
+//     message: 'User deleted successfully',
+//   });
+// });
+
+
+// // Soft delete user => /api/v1/users/admin/user/:id
+// exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
+//   const user = await User.findById(req.params.id);
+
+//   if (!user) {
+//     return next(new ErrorHandler(`User not found with id: ${req.params.id}`, 404));
+//   }
+
+//   user.deleted = true;
+//   await user.save();
+
+//   res.status(200).json({
+//     success: true,
+//     message: 'User soft deleted successfully',
+//   });
+// });
