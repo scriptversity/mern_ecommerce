@@ -1,10 +1,12 @@
 const Product = require("../models/product.model");
 const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncErrors = require("../middlewares/catchAsyncErrors");
+const APIFeatures = require("../utils/apiFeatures");
 
 // Create new product => /api/v1/products/admin/new
 exports.newProduct = async (req, res, next) => {
   try {
+    req.body.user = req.user.id;
     const product = await Product.create(req.body);
 
     res.status(201).json({
@@ -55,25 +57,24 @@ exports.newProduct = async (req, res, next) => {
 //   }
 // };
 
-// Get all products => /api/v1/products
-exports.getProducts = async (req, res, next) => {
-  try {
-    const products = await Product.find();
+// // Get all products => /api/v1/products?keyword=apple
+// exports.getProducts = async (req, res, next) => {
+//   try {
+//     const products = await Product.find();
 
-    res.status(200).json({
-      success: true,
-      count: products.length,
-      products,
-    });
-  } catch (error) {
-    console.error('Error fetching products:', error.message);
-    next(error); // Pass the error to the next middleware
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       count: products.length,
+//       products,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching products:', error.message);
+//     next(error); // Pass the error to the next middleware
+//   }
+// };
 
 // // Get all products => /api/v1/products
 // exports.getProducts = catchAsyncErrors(async (req, res, next) => {
-
 //   const products = await Product.find();
 
 //   res.status(200).json({
@@ -82,6 +83,26 @@ exports.getProducts = async (req, res, next) => {
 //     products,
 //   });
 // });
+
+// Get all products => /api/v1/products
+exports.getProducts = catchAsyncErrors(async (req, res, next) => {
+
+  const resPerPage = 4;
+  const productsCount = await Product.countDocuments();
+  const apiFeatures = new APIFeatures(Product.find(), req.query)
+    .search()
+    .filter()
+    .pagination(resPerPage);
+
+  const products = await apiFeatures.query;
+
+  res.status(200).json({
+    success: true,
+    count: products.length,
+    productsCount,
+    products,
+  });
+});
 
 // // Get single product details => /api/v1/products/:id
 // exports.getSingleProduct = async (req, res, next) => {

@@ -12,15 +12,31 @@ const connectDB = async () => {
   }
 }
 
+// modern version
 const gracefulShutdown = (signal) => {
-  return (err) => {
+  return async (err) => {
     console.log(`Received ${signal}. Closing MongoDB connection.`.yellow);
-    mongoose.connection.close(() => {
+    try {
+      await mongoose.connection.close();
       console.log('MongoDB connection closed.'.yellow);
       process.exit(err ? 1 : 0);
-    });
-  }
+    } catch (error) {
+      console.error(`Error during MongoDB connection close: ${error.message}`.red.underline.bold);
+      process.exit(1);
+    }
+  };
 };
+
+// legacy version
+// const gracefulShutdown = (signal) => {
+//   return (err) => {
+//     console.log(`Received ${signal}. Closing MongoDB connection.`.yellow);
+//     mongoose.connection.close(() => {
+//       console.log('MongoDB connection closed.'.yellow);
+//       process.exit(err ? 1 : 0);
+//     });
+//   }
+// };
 
 process.on('SIGINT', gracefulShutdown('SIGINT'));
 process.on('SIGTERM', gracefulShutdown('SIGTERM'));

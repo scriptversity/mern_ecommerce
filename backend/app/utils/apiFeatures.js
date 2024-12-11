@@ -4,7 +4,7 @@ function APIFeatures(query, queryStr) {
 }
 
 APIFeatures.prototype.search = function () {
-  var keyword = this.queryStr.keyword ? {
+  const keyword = this.queryStr.keyword ? {
     name: {
       $regex: this.queryStr.keyword,
       $options: 'i'
@@ -16,16 +16,16 @@ APIFeatures.prototype.search = function () {
 };
 
 APIFeatures.prototype.filter = function () {
-  var queryCopy = Object.assign({}, this.queryStr);
+  const queryCopy = Object.assign({}, this.queryStr);
 
   // Removing fields from the query
-  var removeFields = ['keyword', 'limit', 'page'];
+  const removeFields = ['keyword', 'limit', 'page'];
   removeFields.forEach(function (el) {
     delete queryCopy[el];
   });
 
   // Advance filter for price, ratings etc.
-  var queryStr = JSON.stringify(queryCopy);
+  let queryStr = JSON.stringify(queryCopy);
   queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, function (match) {
     return '$' + match;
   });
@@ -35,8 +35,8 @@ APIFeatures.prototype.filter = function () {
 };
 
 APIFeatures.prototype.pagination = function (resPerPage) {
-  var currentPage = Number(this.queryStr.page) || 1;
-  var skip = resPerPage * (currentPage - 1);
+  const currentPage = Number(this.queryStr.page) || 1;
+  const skip = resPerPage * (currentPage - 1);
 
   this.query = this.query.limit(resPerPage).skip(skip);
   return this;
