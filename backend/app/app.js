@@ -16,7 +16,7 @@ app.use(cookieParser());
 // Import routes
 const routes = require('./routes');
 
-app.use("/api/v1",routes);
+app.use("/api/v1", routes);
 
 // Error Middleware
 app.use(errorMiddleware);
