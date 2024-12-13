@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { getProducts } from "../actions/productActions";
 import Product from "./product/Product";
+import Loader from "./layout/Loader";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -12,11 +13,10 @@ const Home = () => {
   useEffect(() => {
     dispatch(getProducts());
   }, [dispatch]);
-  console.log(products);
 
   return (
     <>
-      {loading ? <h2>Loading...</h2> :
+      {loading ? <Loader /> :
         <>
           <MetaData title="Buy Products Online" />
           <h1 id="products_heading">Latest Products</h1>
