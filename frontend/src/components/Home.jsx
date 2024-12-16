@@ -4,15 +4,30 @@ import { useEffect } from "react";
 import { getProducts } from "../actions/productActions";
 import Product from "./product/Product";
 import Loader from "./layout/Loader";
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const Home = () => {
+
   const dispatch = useDispatch();
 
   const { products, loading, error, productsCount } = useSelector((state) => state.products);
 
   useEffect(() => {
+    if (error) {
+      toast.error(error);
+      return;
+      // return toast.error("This is a custom error!", {
+      //   style: {
+      //     backgroundColor: '#3498db', // Change the background color
+      //     color: 'white', // Change the text color
+      //     fontWeight: 'bold', // Optional: make the text bold
+      //     borderRadius: '10px', // Optional: add some border-radius
+      //   },
+      // });
+    }
     dispatch(getProducts());
-  }, [dispatch]);
+  }, [dispatch, error]);
 
   return (
     <>
@@ -28,9 +43,8 @@ const Home = () => {
             </div>
           </section>
         </>}
-
     </>
-  )
+  );
 }
 
-export default Home
+export default Home;
